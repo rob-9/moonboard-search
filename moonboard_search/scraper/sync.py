@@ -155,7 +155,14 @@ def run(username, password, conn):
     log.info("fetching problems")
     count = sync_problems(conn, client.iter_problems())
     set_sync_meta(conn, count)
-    log.info("stored %d 2024 problems", count)
+    if count == 0:
+        log.warning(
+            "stored 0 problems — the API returned data but none matched the "
+            "2024 board (setupId=%d). The board/config IDs may have changed.",
+            MOON2024_SETUP_ID,
+        )
+    else:
+        log.info("stored %d 2024 problems", count)
     return count
 
 

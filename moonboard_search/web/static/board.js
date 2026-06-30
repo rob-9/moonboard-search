@@ -152,7 +152,7 @@ function highlightMoves(moves) {
     c.classList.remove("lit-start", "lit-mid", "lit-end");
   }
   for (const m of moves) {
-    const el = boardEl.querySelector(`.hold[data-coord="${m.coord}"]`);
+    const el = boardEl.querySelector(`.hold[data-coord="${CSS.escape(m.coord)}"]`);
     if (!el) continue;
     if (m.is_start) el.classList.add("lit-start");
     else if (m.is_end) el.classList.add("lit-end");
@@ -185,8 +185,16 @@ for (const id of ["f-grade", "f-angle", "f-benchmark", "f-repeats"]) {
 
 // Boot.
 fetch("/api/holds")
-  .then((r) => r.json())
+  .then((r) => {
+    if (!r.ok) throw new Error(`/api/holds returned ${r.status}`);
+    return r.json();
+  })
   .then((holds) => {
     buildBoard(holds);
     runSearch();
+  })
+  .catch((err) => {
+    boardEl.innerHTML =
+      "<p class='hint'>Could not load board data. Run the scraper, then reload.</p>";
+    console.error(err);
   });

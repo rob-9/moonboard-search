@@ -35,6 +35,44 @@ def test_iter_problems_walks_pages_by_last_id():
 
 
 @responses.activate
+def test_iter_problems_stops_when_cursor_does_not_advance():
+    # API keeps reporting total > 0 but returns the same last id (e.g. an
+    # inclusive endpoint, or a last item missing apiId). Must not loop forever.
+    responses.add(
+        responses.GET,
+        f"{API}/problems/v2/0",
+        json={"total": 5, "data": [{"apiId": 10}]},
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        f"{API}/problems/v2/10",
+        json={"total": 5, "data": [{"apiId": 10}]},  # same id again
+        status=200,
+    )
+
+    c = client.MoonBoardClient("tok", delay=0)
+    ids = [p["apiId"] for p in c.iter_problems()]
+
+    assert ids == [10, 10]  # terminates after the non-advancing page
+
+
+@responses.activate
+def test_iter_problems_stops_on_missing_api_id():
+    responses.add(
+        responses.GET,
+        f"{API}/problems/v2/0",
+        json={"total": 5, "data": [{"apiId": 10}, {"name": "no id"}]},
+        status=200,
+    )
+
+    c = client.MoonBoardClient("tok", delay=0)
+    ids = [p.get("apiId") for p in c.iter_problems()]
+
+    assert ids == [10, None]  # both yielded, then stops (cursor stuck at 0)
+
+
+@responses.activate
 def test_iter_problems_stops_on_empty_data():
     responses.add(
         responses.GET,

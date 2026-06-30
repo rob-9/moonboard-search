@@ -15,21 +15,30 @@ def get_token(username, password, timeout=30):
 
     Returns the access_token string. Raises AuthError on failure.
     """
-    resp = requests.post(
-        TOKEN_URL,
-        data={
-            "username": username,
-            "password": password,
-            "grant_type": "password",
-            "client_id": CLIENT_ID,
-        },
-        timeout=timeout,
-    )
+    try:
+        resp = requests.post(
+            TOKEN_URL,
+            data={
+                "username": username,
+                "password": password,
+                "grant_type": "password",
+                "client_id": CLIENT_ID,
+            },
+            timeout=timeout,
+        )
+    except requests.RequestException as exc:
+        raise AuthError(f"MoonBoard login request failed: {exc}") from exc
+
     if resp.status_code != 200:
         detail = _error_detail(resp)
         raise AuthError(f"MoonBoard login failed ({resp.status_code}): {detail}")
 
-    token = resp.json().get("access_token")
+    try:
+        body = resp.json()
+    except ValueError as exc:
+        raise AuthError("MoonBoard login returned a non-JSON response") from exc
+
+    token = body.get("access_token")
     if not token:
         raise AuthError("MoonBoard login returned no access_token")
     return token

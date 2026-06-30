@@ -1,4 +1,5 @@
 import pytest
+import requests
 import responses
 
 from moonboard_search.scraper import auth
@@ -34,6 +35,30 @@ def test_get_token_sends_password_grant_payload():
     assert "client_id=com.moonclimbing.mb" in body
     assert "username=alice" in body
     assert "password=secret" in body
+
+
+@responses.activate
+def test_get_token_wraps_network_error_as_autherror():
+    responses.add(
+        responses.POST,
+        auth.TOKEN_URL,
+        body=requests.exceptions.ConnectionError("boom"),
+    )
+    with pytest.raises(auth.AuthError):
+        auth.get_token("user", "pass")
+
+
+@responses.activate
+def test_get_token_wraps_non_json_success_as_autherror():
+    responses.add(
+        responses.POST,
+        auth.TOKEN_URL,
+        body="<html>maintenance</html>",
+        status=200,
+        content_type="text/html",
+    )
+    with pytest.raises(auth.AuthError):
+        auth.get_token("user", "pass")
 
 
 @responses.activate

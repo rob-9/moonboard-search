@@ -38,7 +38,13 @@ class MoonBoardClient:
                 break
             for problem in data:
                 yield problem
+            prev_id = last_id
             last_id = data[-1].get("apiId", last_id)
+            # Stop if the cursor did not advance (inclusive page, duplicate
+            # page, or a last item missing apiId) — otherwise we'd refetch the
+            # same URL forever.
+            if last_id <= prev_id:
+                break
             if page.get("total", 0) <= 0:
                 break
             if self.delay:
