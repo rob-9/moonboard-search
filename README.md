@@ -66,6 +66,34 @@ flask --app moonboard_search.web.app:create_app run
 - `benchmark=1` — benchmarks only
 - `min_repeats=20` — minimum repeat count
 
+## Deploy to Vercel (use it on your phone)
+
+Vercel's filesystem is read-only, so the scraper runs **locally** and the
+resulting database is committed and served read-only. Credentials never leave
+your machine.
+
+1. **Scrape locally** so `moonboard.db` exists:
+   ```bash
+   python -m moonboard_search.scraper.sync
+   ```
+2. **Commit the database** (`.gitignore` already allows `moonboard.db`):
+   ```bash
+   git add moonboard.db && git commit -m "data: bundle scraped 2024 problems"
+   ```
+3. **Deploy** (`wsgi.py` is the entrypoint; `vercel.json` is included):
+   ```bash
+   npm i -g vercel
+   vercel        # preview
+   vercel --prod # production
+   ```
+4. **Make it private** — in the Vercel dashboard: Project → Settings →
+   Deployment Protection → enable **Vercel Authentication**. Only your Vercel
+   account can then open the URL. (Recommended: deploying republishes scraped
+   MoonBoard data, so keep it behind auth.)
+
+Re-syncing later = re-run the scraper, commit the updated `moonboard.db`,
+`vercel --prod` again.
+
 ## Tests
 
 ```bash

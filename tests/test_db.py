@@ -1,5 +1,7 @@
 import sqlite3
 
+import pytest
+
 from moonboard_search import db
 
 
@@ -35,6 +37,20 @@ def test_connect_returns_rows_as_mappings(tmp_path):
     row = conn.execute("SELECT name, grade FROM problems").fetchone()
     assert row["name"] == "Test"
     assert row["grade"] == "6B"
+
+
+def test_readonly_connection_allows_reads_blocks_writes(tmp_path):
+    path = tmp_path / "ro.db"
+    conn = db.connect(str(path))
+    db.init_db(conn)
+    conn.execute("INSERT INTO problems (api_id, name) VALUES (1, 'X')")
+    conn.commit()
+    conn.close()
+
+    ro = db.connect(str(path), read_only=True)
+    assert ro.execute("SELECT name FROM problems").fetchone()["name"] == "X"
+    with pytest.raises(sqlite3.OperationalError):
+        ro.execute("INSERT INTO problems (api_id, name) VALUES (2, 'Y')")
 
 
 def test_moves_index_exists(tmp_path):

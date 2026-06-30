@@ -6,13 +6,16 @@ from .. import db
 from . import search
 
 
-def create_app(db_path=None):
+def create_app(db_path=None, read_only=False):
     app = Flask(__name__)
     app.config["DB_PATH"] = db_path or db.DEFAULT_DB
+    app.config["DB_READONLY"] = read_only
 
     def get_conn():
         if "conn" not in g:
-            g.conn = db.connect(app.config["DB_PATH"])
+            g.conn = db.connect(
+                app.config["DB_PATH"], read_only=app.config["DB_READONLY"]
+            )
         return g.conn
 
     @app.teardown_appcontext

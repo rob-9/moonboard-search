@@ -28,6 +28,23 @@ def client(tmp_path):
     return app.test_client()
 
 
+def test_readonly_app_still_serves_search(tmp_path):
+    path = tmp_path / "ro_app.db"
+    conn = db.connect(str(path))
+    db.init_db(conn)
+    conn.execute("INSERT INTO problems (api_id, name, grade) VALUES (1, 'A', '6B')")
+    conn.executemany(
+        "INSERT INTO moves (problem_id, coord, is_start, is_end) VALUES (?,?,?,?)",
+        [(1, "A5", 1, 0)],
+    )
+    conn.commit()
+    conn.close()
+    app = create_app(str(path), read_only=True)
+    resp = app.test_client().get("/api/search?holds=A5")
+    assert resp.status_code == 200
+    assert resp.get_json()[0]["name"] == "A"
+
+
 def test_index_serves_html(client):
     resp = client.get("/")
     assert resp.status_code == 200
