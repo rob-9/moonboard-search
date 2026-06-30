@@ -2,9 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MoonBoard 2024 — hold search</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='board.css') }}" />
 </head>
 <body>
-  <main id="board"></main>
+  <header>
+    <h1>MoonBoard 2024 — search by hold</h1>
+    <p class="hint">
+      Click holds to build a query. Cycle: required (blue) → exclude (red) → off.
+      Use the mode buttons to mark start / finish holds.
+    </p>
+  </header>
+
+  <div class="layout">
+    <section class="board-panel">
+      <div class="modes">
+        <button data-mode="required" class="mode active">Hold</button>
+        <button data-mode="start" class="mode">Start</button>
+        <button data-mode="end" class="mode">Finish</button>
+        <button id="clear" class="mode clear">Clear</button>
+      </div>
+      <div id="board"></div>
+    </section>
+
+    <section class="results-panel">
+      <div class="filters">
+        <label>Grade <input id="f-grade" placeholder="e.g. 6B+" size="6" /></label>
+        <label>Angle
+          <select id="f-angle">
+            <option value="">any</option>
+            <option value="25">25°</option>
+            <option value="40">40°</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="f-benchmark" /> Benchmarks</label>
+        <label>Min repeats <input id="f-repeats" type="number" min="0" size="5" /></label>
+      </div>
+      <div id="count" class="count"></div>
+      <ul id="results"></ul>
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='board.js') }}"></script>
 </body>
 </html>

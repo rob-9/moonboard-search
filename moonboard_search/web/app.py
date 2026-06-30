@@ -27,10 +27,24 @@ def create_app(db_path=None):
 
     @app.route("/api/holds")
     def api_holds():
-        rows = get_conn().execute(
+        conn = get_conn()
+        rows = conn.execute(
             "SELECT coord, x, y, hold_number, description FROM holds"
         ).fetchall()
-        return jsonify([dict(r) for r in rows])
+        if rows:
+            return jsonify([dict(r) for r in rows])
+        # No stored layout — fall back to distinct coords used by climbs so the
+        # board still renders (positions derived client-side from the coord).
+        coords = conn.execute(
+            "SELECT DISTINCT coord FROM moves ORDER BY coord"
+        ).fetchall()
+        return jsonify(
+            [
+                {"coord": c["coord"], "x": None, "y": None,
+                 "hold_number": None, "description": None}
+                for c in coords
+            ]
+        )
 
     @app.route("/api/search")
     def api_search():

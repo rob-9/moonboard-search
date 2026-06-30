@@ -42,6 +42,24 @@ def test_api_holds_returns_layout(client):
     assert coords == {"A5", "F10"}
 
 
+def test_api_holds_falls_back_to_move_coords(tmp_path):
+    # DB with moves but no holds layout rows.
+    path = tmp_path / "noholds.db"
+    conn = db.connect(str(path))
+    db.init_db(conn)
+    conn.execute("INSERT INTO problems (api_id, name) VALUES (1, 'X')")
+    conn.executemany(
+        "INSERT INTO moves (problem_id, coord, is_start, is_end) VALUES (?,?,?,?)",
+        [(1, "A5", 1, 0), (1, "K18", 0, 1)],
+    )
+    conn.commit()
+    conn.close()
+    app = create_app(str(path))
+    resp = app.test_client().get("/api/holds")
+    coords = {h["coord"] for h in resp.get_json()}
+    assert coords == {"A5", "K18"}
+
+
 def test_api_search_by_hold(client):
     resp = client.get("/api/search?holds=F10")
     assert resp.status_code == 200
